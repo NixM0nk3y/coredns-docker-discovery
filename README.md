@@ -28,9 +28,9 @@ How To Build
 ------------
 
     GO111MODULE=on go get -u github.com/coredns/coredns
-    GO111MODULE=on go get github.com/kevinjqiu/coredns-dockerdiscovery
+    GO111MODULE=on go get github.com/rb-coredns/coredns-dockerdiscovery
     cd ~/go/src/github.com/coredns/coredns
-    echo "docker:github.com/kevinjqiu/coredns-dockerdiscovery" >> plugin.cfg
+    echo "docker:github.com/rb-coredns/coredns-dockerdiscovery" >> plugin.cfg
     cat plugin.cfg | uniq > plugin.cfg.tmp
     mv plugin.cfg.tmp plugin.cfg
     make all
@@ -40,7 +40,7 @@ Alternatively, you can use the following manual steps:
 
 1. Checkout coredns:  `go get github.com/coredns/coredns`.
 2. `cd $GOPATH/src/github.com/coredns/coredns`
-3. `echo "docker:github.com/kevinjqiu/coredns-dockerdiscovery" >> plugin.cfg`
+3. `echo "docker:github.com/rb-coredns/coredns-dockerdiscovery" >> plugin.cfg`
 4. `go generate`
 5. `make`
 
