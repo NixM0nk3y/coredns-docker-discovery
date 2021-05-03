@@ -1,12 +1,10 @@
-package dockerdiscovery
+package docker
 
 import (
+	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
-
 	dockerapi "github.com/fsouza/go-dockerclient"
-
-	"github.com/coredns/caddy"
 )
 
 const defaultDockerEndpoint = "unix:///var/run/docker.sock"
