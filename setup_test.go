@@ -18,24 +18,24 @@ type setupDockerDiscoveryTestCase struct {
 
 func TestSetupDockerDiscovery(t *testing.T) {
 	testCases := []setupDockerDiscoveryTestCase{
-		setupDockerDiscoveryTestCase{
+		{
 			"docker",
 			defaultDockerEndpoint,
 			defaultDockerDomain,
 		},
-		setupDockerDiscoveryTestCase{
+		{
 			"docker unix:///var/run/docker.sock.backup",
 			"unix:///var/run/docker.sock.backup",
 			defaultDockerDomain,
 		},
-		setupDockerDiscoveryTestCase{
+		{
 			`docker {
 	hostname_domain example.org.
 }`,
 			defaultDockerEndpoint,
 			"example.org.",
 		},
-		setupDockerDiscoveryTestCase{
+		{
 			`docker unix:///home/user/docker.sock {
 	hostname_domain home.example.org.
 }`,
