@@ -1,4 +1,4 @@
-package docker
+package dockerdiscovery
 
 import (
 	"github.com/coredns/caddy"
