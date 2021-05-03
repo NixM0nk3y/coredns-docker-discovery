@@ -220,7 +220,7 @@ func (dd DockerDiscovery) start() error {
 		case err := <-errChan:
 			// TODO err
 			// return err
-			log.Printf("[docker] error aquired: %+v", err)
+			log.Printf("[docker] error acquired: %+v", err)
 		case msg := <-event:
 			go func(msg events.Message) {
 				event := fmt.Sprintf("%s:%s", msg.Type, msg.Action)
