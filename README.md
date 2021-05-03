@@ -14,8 +14,8 @@ home = "https://github.com/rb-coredns/coredns-docker-discovery/blob/master/READM
 Docker discovery plugin for coredns
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/rb-coredns/coredns-docker-discovery.svg)](https://pkg.go.dev/github.com/rb-coredns/coredns-docker-discovery) 
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/rb-pkg/amqper?style=flat-square) 
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/rb-pkg/amqper?style=flat-square)](https://github.com/rb-pkg/amqper/releases) 
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/rb-coredns/coredns-docker-discovery?style=flat-square) 
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/rb-coredns/coredns-docker-discovery?style=flat-square)](https://github.com/rb-coredns/coredns-docker-discovery/releases) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/rb-coredns/coredns-docker-discovery)](https://goreportcard.com/report/github.com/rb-coredns/coredns-docker-discovery)
 
 Based on [kevinjqiu/coredns-dockerdiscovery](https://github.com/kevinjqiu/coredns-dockerdiscovery)
