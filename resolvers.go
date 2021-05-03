@@ -33,11 +33,11 @@ func (resolver subDomainHostResolver) resolve(container *types.ContainerJSON) ([
 	return domains, nil
 }
 
-type LabelResolver struct {
+type labelResolver struct {
 	hostLabel string
 }
 
-func (resolver LabelResolver) resolve(container *types.ContainerJSON) ([]string, error) {
+func (resolver labelResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 
 	for label, value := range container.Config.Labels {
