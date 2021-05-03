@@ -17,15 +17,15 @@ import (
 	"github.com/miekg/dns"
 )
 
-type ContainerInfo struct {
+type containerInfo struct {
 	container *types.ContainerJSON
 	address   net.IP
 	domains   []string // resolved domain
 }
 
-type ContainerInfoMap map[string]*ContainerInfo
+type containerInfoMap map[string]*containerInfo
 
-type ContainerDomainResolver interface {
+type containerDomainResolver interface {
 	// return domains without trailing dot
 	resolve(container *types.ContainerJSON) ([]string, error)
 }
@@ -34,9 +34,9 @@ type ContainerDomainResolver interface {
 type DockerDiscovery struct {
 	Next             plugin.Handler
 	dockerEndpoint   string
-	resolvers        []ContainerDomainResolver
+	resolvers        []containerDomainResolver
 	dockerClient     *client.Client
-	containerInfoMap ContainerInfoMap
+	containerInfoMap containerInfoMap
 	domainIPMap      map[string]*net.IP
 }
 
@@ -44,7 +44,7 @@ type DockerDiscovery struct {
 func NewDockerDiscovery(dockerEndpoint string) DockerDiscovery {
 	return DockerDiscovery{
 		dockerEndpoint:   dockerEndpoint,
-		containerInfoMap: make(ContainerInfoMap),
+		containerInfoMap: make(containerInfoMap),
 	}
 }
 
@@ -61,7 +61,7 @@ func (dd DockerDiscovery) resolveDomainsByContainer(container *types.ContainerJS
 	return domains, nil
 }
 
-func (dd DockerDiscovery) containerInfoByDomain(requestName string) (*ContainerInfo, error) {
+func (dd DockerDiscovery) containerInfoByDomain(requestName string) (*containerInfo, error) {
 	for _, containerInfo := range dd.containerInfoMap {
 		for _, d := range containerInfo.domains {
 			if fmt.Sprintf("%s.", d) == requestName { // qualified domain name must be specified with a trailing dot
@@ -157,7 +157,7 @@ func (dd DockerDiscovery) updateContainerInfo(container *types.ContainerJSON) er
 
 	domains, _ := dd.resolveDomainsByContainer(container)
 	if len(domains) > 0 {
-		dd.containerInfoMap[container.ID] = &ContainerInfo{
+		dd.containerInfoMap[container.ID] = &containerInfo{
 			container: container,
 			address:   containerAddress,
 			domains:   domains,
