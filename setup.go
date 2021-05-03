@@ -4,10 +4,10 @@ import (
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
-	dockerapi "github.com/fsouza/go-dockerclient"
+	"github.com/docker/docker/client"
+	dockerClient "github.com/docker/docker/client"
 )
 
-const defaultDockerEndpoint = "unix:///var/run/docker.sock"
 const defaultDockerDomain = "docker.local"
 
 func init() {
@@ -19,7 +19,7 @@ func init() {
 
 // TODO(kevinjqiu): add docker endpoint verification
 func createPlugin(c *caddy.Controller) (DockerDiscovery, error) {
-	dd := NewDockerDiscovery(defaultDockerEndpoint)
+	dd := NewDockerDiscovery(client.DefaultDockerHost)
 	labelResolver := &LabelResolver{hostLabel: "coredns.dockerdiscovery.host"}
 	dd.resolvers = append(dd.resolvers, labelResolver)
 
@@ -73,11 +73,14 @@ func createPlugin(c *caddy.Controller) (DockerDiscovery, error) {
 			}
 		}
 	}
-	dockerClient, err := dockerapi.NewClient(dd.dockerEndpoint)
+	var err error
+
+	// todo add options for tls connections and other
+	dd.dockerClient, err = dockerClient.NewClientWithOpts(dockerClient.WithHost(dd.dockerEndpoint))
 	if err != nil {
 		return dd, err
 	}
-	dd.dockerClient = dockerClient
+
 	go dd.start()
 	return dd, nil
 }

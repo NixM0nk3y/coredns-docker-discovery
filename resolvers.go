@@ -1,13 +1,13 @@
-package docker
+package dockerdiscovery
 
 import (
 	"fmt"
 	"strings"
 
-	dockerapi "github.com/fsouza/go-dockerclient"
+	"github.com/docker/docker/api/types"
 )
 
-func normalizeContainerName(container *dockerapi.Container) string {
+func normalizeContainerName(container *types.ContainerJSON) string {
 	return strings.TrimLeft(container.Name, "/")
 }
 
@@ -17,7 +17,7 @@ type SubDomainContainerNameResolver struct {
 	domain string
 }
 
-func (resolver SubDomainContainerNameResolver) resolve(container *dockerapi.Container) ([]string, error) {
+func (resolver SubDomainContainerNameResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 	domains = append(domains, fmt.Sprintf("%s.%s", normalizeContainerName(container), resolver.domain))
 	return domains, nil
@@ -27,7 +27,7 @@ type SubDomainHostResolver struct {
 	domain string
 }
 
-func (resolver SubDomainHostResolver) resolve(container *dockerapi.Container) ([]string, error) {
+func (resolver SubDomainHostResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 	domains = append(domains, fmt.Sprintf("%s.%s", container.Config.Hostname, resolver.domain))
 	return domains, nil
@@ -37,7 +37,7 @@ type LabelResolver struct {
 	hostLabel string
 }
 
-func (resolver LabelResolver) resolve(container *dockerapi.Container) ([]string, error) {
+func (resolver LabelResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 
 	for label, value := range container.Config.Labels {
@@ -54,7 +54,7 @@ type NetworkAliasesResolver struct {
 	network string
 }
 
-func (resolver NetworkAliasesResolver) resolve(container *dockerapi.Container) ([]string, error) {
+func (resolver NetworkAliasesResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 
 	if resolver.network != "" {

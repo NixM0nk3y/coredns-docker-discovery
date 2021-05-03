@@ -18,7 +18,11 @@ home = "https://github.com/rb-coredns/coredns-docker-discovery/blob/master/READM
 
 Docker discovery plugin for coredns
 
-Based on [kevinjqiu/coredns-dockerdiscovery](https://github.com/kevinjqiu/coredns-dockerdiscovery)
+Based on [kevinjqiu/coredns-dockerdiscovery](https://github.com/kevinjqiu/coredns-dockerdiscovery) but with some changes:
+- use official golang docker client `github.com/docker/docker` instead of `github.com/fsouza/go-dockerclient` 
+- use default Docker endpoint contant from official driver
+- updated dependencies (caddy to coredns)
+- updated tests to run on windows and linux without problems
 
 ## Name
 
