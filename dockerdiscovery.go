@@ -215,57 +215,16 @@ func (dd DockerDiscovery) start() error {
 
 	event, errChan := dd.dockerClient.Events(context.Background(), types.EventsOptions{Filters: filter})
 
+forLoop:
 	for {
 		select {
 		case err := <-errChan:
 			// TODO err
 			// return err
 			log.Printf("[docker] error acquired: %+v", err)
+			break forLoop
 		case msg := <-event:
-			go func(msg events.Message) {
-				event := fmt.Sprintf("%s:%s", msg.Type, msg.Action)
-				switch event {
-				case "container:start":
-					log.Println("[docker] New container spawned. Attempt to add A record for it")
-
-					container, err := dd.dockerClient.ContainerInspect(context.Background(), msg.Actor.ID)
-					if err != nil {
-						log.Printf("[docker] Event error %s #%s: %s", event, msg.Actor.ID[:12], err)
-						return
-					}
-					if err := dd.updateContainerInfo(&container); err != nil {
-						log.Printf("[docker] Error adding A record for container %s: %s", container.ID[:12], err)
-					}
-				case "container:die":
-					log.Println("[docker] Container being stopped. Attempt to remove its A record from the DNS", msg.Actor.ID[:12])
-					if err := dd.removeContainerInfo(msg.Actor.ID); err != nil {
-						log.Printf("[docker] Error deleting A record for container: %s: %s", msg.Actor.ID[:12], err)
-					}
-				case "network:connect":
-					// take a look https://gist.github.com/josefkarasek/be9bac36921f7bc9a61df23451594fbf for example of same event's types attributes
-					log.Printf("[docker] Container %s being connected to network %s.", msg.Actor.Attributes["container"][:12], msg.Actor.Attributes["name"])
-
-					container, err := dd.dockerClient.ContainerInspect(context.Background(), msg.Actor.Attributes["container"])
-					if err != nil {
-						log.Printf("[docker] Event error %s #%s: %s", event, msg.Actor.Attributes["container"][:12], err)
-						return
-					}
-					if err := dd.updateContainerInfo(&container); err != nil {
-						log.Printf("[docker] Error adding A record for container %s: %s", container.ID[:12], err)
-					}
-				case "network:disconnect":
-					log.Printf("[docker] Container %s being disconnected from network %s", msg.Actor.Attributes["container"][:12], msg.Actor.Attributes["name"])
-
-					container, err := dd.dockerClient.ContainerInspect(context.Background(), msg.Actor.Attributes["container"])
-					if err != nil {
-						log.Printf("[docker] Event error %s #%s: %s", event, msg.Actor.Attributes["container"][:12], err)
-						return
-					}
-					if err := dd.updateContainerInfo(&container); err != nil {
-						log.Printf("[docker] Error adding A record for container %s: %s", container.ID[:12], err)
-					}
-				}
-			}(msg)
+			go dockerEventHandler(&dd, msg)
 		}
 	}
 
@@ -290,4 +249,49 @@ func a(zone string, ips []net.IP) []dns.RR {
 		answers = append(answers, r)
 	}
 	return answers
+}
+
+func dockerEventHandler(dd *DockerDiscovery, msg events.Message) {
+	event := fmt.Sprintf("%s:%s", msg.Type, msg.Action)
+	switch event {
+	case "container:start":
+		log.Println("[docker] New container spawned. Attempt to add A record for it")
+
+		container, err := dd.dockerClient.ContainerInspect(context.Background(), msg.Actor.ID)
+		if err != nil {
+			log.Printf("[docker] Event error %s #%s: %s", event, msg.Actor.ID[:12], err)
+			return
+		}
+		if err := dd.updateContainerInfo(&container); err != nil {
+			log.Printf("[docker] Error adding A record for container %s: %s", container.ID[:12], err)
+		}
+	case "container:die":
+		log.Println("[docker] Container being stopped. Attempt to remove its A record from the DNS", msg.Actor.ID[:12])
+		if err := dd.removeContainerInfo(msg.Actor.ID); err != nil {
+			log.Printf("[docker] Error deleting A record for container: %s: %s", msg.Actor.ID[:12], err)
+		}
+	case "network:connect":
+		// take a look https://gist.github.com/josefkarasek/be9bac36921f7bc9a61df23451594fbf for example of same event's types attributes
+		log.Printf("[docker] Container %s being connected to network %s.", msg.Actor.Attributes["container"][:12], msg.Actor.Attributes["name"])
+
+		container, err := dd.dockerClient.ContainerInspect(context.Background(), msg.Actor.Attributes["container"])
+		if err != nil {
+			log.Printf("[docker] Event error %s #%s: %s", event, msg.Actor.Attributes["container"][:12], err)
+			return
+		}
+		if err := dd.updateContainerInfo(&container); err != nil {
+			log.Printf("[docker] Error adding A record for container %s: %s", container.ID[:12], err)
+		}
+	case "network:disconnect":
+		log.Printf("[docker] Container %s being disconnected from network %s", msg.Actor.Attributes["container"][:12], msg.Actor.Attributes["name"])
+
+		container, err := dd.dockerClient.ContainerInspect(context.Background(), msg.Actor.Attributes["container"])
+		if err != nil {
+			log.Printf("[docker] Event error %s #%s: %s", event, msg.Actor.Attributes["container"][:12], err)
+			return
+		}
+		if err := dd.updateContainerInfo(&container); err != nil {
+			log.Printf("[docker] Error adding A record for container %s: %s", container.ID[:12], err)
+		}
+	}
 }
