@@ -1,4 +1,4 @@
-module github.com/rb-coredns/coredns-dockerdiscovery
+module github.com/rb-coredns/coredns-docker-discovery
 
 go 1.16
 
