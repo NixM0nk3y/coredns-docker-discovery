@@ -1,4 +1,4 @@
-package docker
+package dockerdiscovery
 
 import (
 	"fmt"
@@ -30,15 +30,15 @@ func TestSetupDockerDiscovery(t *testing.T) {
 		},
 		{
 			`docker {
-	hostname_domain example.org.
-}`,
+				hostname_domain example.org.
+			}`,
 			defaultDockerEndpoint,
 			"example.org.",
 		},
 		{
 			`docker unix:///home/user/docker.sock {
-	hostname_domain home.example.org.
-}`,
+				hostname_domain home.example.org.
+			}`,
 			"unix:///home/user/docker.sock",
 			"home.example.org.",
 		},
@@ -79,29 +79,31 @@ func TestSetupDockerDiscovery(t *testing.T) {
 		},
 	}
 
-	e := dd.updateContainerInfo(container)
-	assert.Nil(t, e)
+	err = dd.updateContainerInfo(container)
+	assert.Nil(t, err)
 
-	containerInfo, e := dd.containerInfoByDomain("myproject.loc.")
-	assert.Nil(t, e)
+	containerInfo, err := dd.containerInfoByDomain("myproject.loc.")
+	assert.Nil(t, err)
 	assert.NotNil(t, containerInfo)
 	assert.NotNil(t, containerInfo.address)
-
 	assert.Equal(t, containerInfo.address, address)
 
-	containerInfo, e = dd.containerInfoByDomain("wrong.loc.")
+	containerInfo, err = dd.containerInfoByDomain("wrong.loc.")
 	assert.Nil(t, containerInfo)
 
-	containerInfo, e = dd.containerInfoByDomain("nginx.home.example.org.")
+	containerInfo, err = dd.containerInfoByDomain("nginx.home.example.org.")
+	assert.Nil(t, err)
 	assert.NotNil(t, containerInfo)
 
-	containerInfo, e = dd.containerInfoByDomain("wrong.home.example.org.")
+	containerInfo, err = dd.containerInfoByDomain("wrong.home.example.org.")
 	assert.Nil(t, containerInfo)
 
-	containerInfo, e = dd.containerInfoByDomain("label-host.loc.")
+	containerInfo, err = dd.containerInfoByDomain("label-host.loc.")
+	assert.Nil(t, err)
 	assert.NotNil(t, containerInfo)
 
-	containerInfo, e = dd.containerInfoByDomain(fmt.Sprintf("%s.docker.loc.", container.Name))
+	containerInfo, err = dd.containerInfoByDomain(fmt.Sprintf("%s.docker.loc.", container.Name))
+	assert.Nil(t, err)
 	assert.NotNil(t, containerInfo)
 	assert.Equal(t, container.Name, containerInfo.container.Name)
 }
