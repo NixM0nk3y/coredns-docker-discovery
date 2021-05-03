@@ -13,6 +13,11 @@ home = "https://github.com/rb-coredns/coredns-docker-discovery/blob/master/READM
 
 Docker discovery plugin for coredns
 
+[![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/rb-coredns/coredns-docker-discovery)
+[![Coverage Status](https://coveralls.io/repos/github/rb-coredns/coredns-docker-discovery/badge.svg?branch=master)](https://coveralls.io/github/rb-coredns/coredns-docker-discovery?branch=master)
+[![Build Status](https://travis-ci.com/rb-coredns/coredns-docker-discovery.svg?branch=master)](https://travis-ci.com/rb-coredns/coredns-docker-discovery)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rb-coredns/coredns-docker-discovery)](https://goreportcard.com/report/github.com/rb-coredns/coredns-docker-discovery)
+
 Based on [kevinjqiu/coredns-dockerdiscovery](https://github.com/kevinjqiu/coredns-dockerdiscovery)
 
 ## Name
@@ -22,12 +27,12 @@ dockerdiscovery - add/remove DNS records for docker containers.
 ## Syntax
 
 ```
-    docker [DOCKER_ENDPOINT] {
-        domain DOMAIN_NAME
-        hostname_domain HOSTNAME_DOMAIN_NAME
-        network_aliases DOCKER_NETWORK
-        label LABEL
-    }
+docker [DOCKER_ENDPOINT] {
+    domain DOMAIN_NAME
+    hostname_domain HOSTNAME_DOMAIN_NAME
+    network_aliases DOCKER_NETWORK
+    label LABEL
+}
 ```
 
 * `DOCKER_ENDPOINT`: the path to the docker socket. If unspecified, defaults to `unix:///var/run/docker.sock`. It can also be TCP socket, such as `tcp://127.0.0.1:999`.
@@ -39,14 +44,14 @@ dockerdiscovery - add/remove DNS records for docker containers.
 ## How To Build
 
 ```
-    GO111MODULE=on go get -u github.com/coredns/coredns
-    GO111MODULE=on go get github.com/rb-coredns/coredns-dockerdiscovery
-    cd ~/go/src/github.com/coredns/coredns
-    echo "docker:github.com/rb-coredns/coredns-dockerdiscovery" >> plugin.cfg
-    cat plugin.cfg | uniq > plugin.cfg.tmp
-    mv plugin.cfg.tmp plugin.cfg
-    make all
-    ~/go/src/github.com/coredns/coredns/coredns --version
+GO111MODULE=on go get -u github.com/coredns/coredns
+GO111MODULE=on go get github.com/rb-coredns/coredns-dockerdiscovery
+cd ~/go/src/github.com/coredns/coredns
+echo "docker:github.com/rb-coredns/coredns-dockerdiscovery" >> plugin.cfg
+cat plugin.cfg | uniq > plugin.cfg.tmp
+mv plugin.cfg.tmp plugin.cfg
+make all
+~/go/src/github.com/coredns/coredns/coredns --version
 ```
 
 Alternatively, you can use the following manual steps:
@@ -60,14 +65,14 @@ Alternatively, you can use the following manual steps:
 Alternatively, run insider docker container
 
 ```
-    docker build -t coredns-dockerdiscovery .
-    docker run --rm -v ${PWD}/Corefile:/etc/Corefile -v /var/run/docker.sock:/var/run/docker.sock -p 15353:15353/udp coredns-dockerdiscovery -conf /etc/Corefile
+docker build -t coredns-dockerdiscovery .
+docker run --rm -v ${PWD}/Corefile:/etc/Corefile -v /var/run/docker.sock:/var/run/docker.sock -p 15353:15353/udp coredns-dockerdiscovery -conf /etc/Corefile
 ```
 
 Run tests
 
 ```
-    go test -v
+go test -v
 ```
 
 ### Example
@@ -76,76 +81,78 @@ Run tests
 `Corefile`:
 
 ```
-    .:15353 {
-        docker unix:///var/run/docker.sock {
-            domain docker.loc
-            hostname_domain docker-host.loc
-        }
-        log
+.:15353 {
+    docker unix:///var/run/docker.sock {
+        domain docker.loc
+        hostname_domain docker-host.loc
     }
+    log
+}
 ```
 
 Start CoreDNS:
 
 ```
-    $ ./coredns
+$ ./coredns
 
-    .:15353
-    2018/04/26 22:36:32 [docker] start
-    2018/04/26 22:36:32 [INFO] CoreDNS-1.1.1
-    2018/04/26 22:36:32 [INFO] linux/amd64, go1.10.1,
-    CoreDNS-1.1.1
+.:15353
+2018/04/26 22:36:32 [docker] start
+2018/04/26 22:36:32 [INFO] CoreDNS-1.1.1
+2018/04/26 22:36:32 [INFO] linux/amd64, go1.10.1,
+CoreDNS-1.1.1
 ```
 
 Start a docker container:
 
 ```
-    $ docker run -d --name my-alpine --hostname alpine alpine sleep 1000
-    78c2a06ef2a9b63df857b7985468f7310bba0d9ea4d0d2629343aff4fd171861
+$ docker run -d --name my-alpine --hostname alpine alpine sleep 1000
+78c2a06ef2a9b63df857b7985468f7310bba0d9ea4d0d2629343aff4fd171861
 ```
 
 Use CoreDNS as your resolver to resolve the `my-alpine.docker.loc` or `alpine.docker-host.loc`:
 
 ```
-    $ dig @localhost -p 15353 my-alpine.docker.loc
+$ dig @localhost -p 15353 my-alpine.docker.loc
 
-    ; <<>> DiG 9.10.3-P4-Ubuntu <<>> @localhost -p 15353 my-alpine.docker.loc
-    ; (1 server found)
-    ;; global options: +cmd
-    ;; Got answer:
-    ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 61786
-    ;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+; <<>> DiG 9.10.3-P4-Ubuntu <<>> @localhost -p 15353 my-alpine.docker.loc
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 61786
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
 
-    ;; OPT PSEUDOSECTION:
-    ; EDNS: version: 0, flags:; udp: 4096
-    ;; QUESTION SECTION:
-    ;my-alpine.docker.loc.            IN      A
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;my-alpine.docker.loc.            IN      A
 
-    ;; ANSWER SECTION:
-    my-alpine.docker.loc.     3600    IN      A       172.17.0.2
+;; ANSWER SECTION:
+my-alpine.docker.loc.     3600    IN      A       172.17.0.2
 
-    ;; Query time: 0 msec
-    ;; SERVER: 127.0.0.1#15353(127.0.0.1)
-    ;; WHEN: Thu Apr 26 22:39:55 EDT 2018
-    ;; MSG SIZE  rcvd: 63
+;; Query time: 0 msec
+;; SERVER: 127.0.0.1#15353(127.0.0.1)
+;; WHEN: Thu Apr 26 22:39:55 EDT 2018
+;; MSG SIZE  rcvd: 63
 ```
 
 Stop the docker container will remove the corresponded DNS entries:
 
 ```
-    $ docker stop my-alpine
-    78c2a
+$ docker stop my-alpine
+78c2a
 
-    $ dig @localhost -p 15353 my-alpine.docker.loc
+$ dig @localhost -p 15353 my-alpine.docker.loc
 
-    ;; QUESTION SECTION:
-    ;my-alpine.docker.loc.            IN      A
+;; QUESTION SECTION:
+;my-alpine.docker.loc.            IN      A
 ```
 
 Container will be resolved by label as ```nginx.loc```
 
 ```
-    docker run --label=coredns.dockerdiscovery.host=nginx.loc nginx
+docker run --label=coredns.dockerdiscovery.host=nginx.loc nginx
 ```
 
- See receipt [how install for local development](setup.md)
+## Local Development
+
+See receipt [how install for local development](setup.md)
