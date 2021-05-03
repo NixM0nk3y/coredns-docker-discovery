@@ -13,21 +13,21 @@ func normalizeContainerName(container *types.ContainerJSON) string {
 
 // resolvers implements ContainerDomainResolver
 
-type SubDomainContainerNameResolver struct {
+type subDomainContainerNameResolver struct {
 	domain string
 }
 
-func (resolver SubDomainContainerNameResolver) resolve(container *types.ContainerJSON) ([]string, error) {
+func (resolver subDomainContainerNameResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 	domains = append(domains, fmt.Sprintf("%s.%s", normalizeContainerName(container), resolver.domain))
 	return domains, nil
 }
 
-type SubDomainHostResolver struct {
+type subDomainHostResolver struct {
 	domain string
 }
 
-func (resolver SubDomainHostResolver) resolve(container *types.ContainerJSON) ([]string, error) {
+func (resolver subDomainHostResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 	domains = append(domains, fmt.Sprintf("%s.%s", container.Config.Hostname, resolver.domain))
 	return domains, nil
@@ -50,11 +50,11 @@ func (resolver LabelResolver) resolve(container *types.ContainerJSON) ([]string,
 	return domains, nil
 }
 
-type NetworkAliasesResolver struct {
+type networkAliasesResolver struct {
 	network string
 }
 
-func (resolver NetworkAliasesResolver) resolve(container *types.ContainerJSON) ([]string, error) {
+func (resolver networkAliasesResolver) resolve(container *types.ContainerJSON) ([]string, error) {
 	var domains []string
 
 	if resolver.network != "" {

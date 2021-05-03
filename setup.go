@@ -37,7 +37,7 @@ func createPlugin(c *caddy.Controller) (DockerDiscovery, error) {
 			var value = c.Val()
 			switch value {
 			case "domain":
-				var resolver = &SubDomainContainerNameResolver{
+				var resolver = &subDomainContainerNameResolver{
 					domain: defaultDockerDomain,
 				}
 				dd.resolvers = append(dd.resolvers, resolver)
@@ -46,7 +46,7 @@ func createPlugin(c *caddy.Controller) (DockerDiscovery, error) {
 				}
 				resolver.domain = c.Val()
 			case "hostname_domain":
-				var resolver = &SubDomainHostResolver{
+				var resolver = &subDomainHostResolver{
 					domain: defaultDockerDomain,
 				}
 				dd.resolvers = append(dd.resolvers, resolver)
@@ -55,7 +55,7 @@ func createPlugin(c *caddy.Controller) (DockerDiscovery, error) {
 				}
 				resolver.domain = c.Val()
 			case "network_aliases":
-				var resolver = &NetworkAliasesResolver{
+				var resolver = &networkAliasesResolver{
 					network: "",
 				}
 				dd.resolvers = append(dd.resolvers, resolver)
