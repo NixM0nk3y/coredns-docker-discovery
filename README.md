@@ -2,7 +2,7 @@
 title = "docker"
 description = "*docker* use docker for service discovery."
 weight = 10
-tags = [  "plugin" , "docker" ]
+tags = [  "plugin" , "docker" , "discovery" ]
 categories = [ "plugin", "external" ]
 date = "2021-05-03T10:26:00+03:00"
 repo = "github.com/rb-coredns/coredns-docker-discovery"
@@ -18,18 +18,25 @@ home = "https://github.com/rb-coredns/coredns-docker-discovery/blob/master/READM
 
 Docker discovery plugin for coredns
 
-Based on [kevinjqiu/coredns-dockerdiscovery](https://github.com/kevinjqiu/coredns-dockerdiscovery) but with some changes:
+Based on [kevinjqiu/coredns-dockerdiscovery](https://github.com/kevinjqiu/coredns-dockerdiscovery) but with some big changes:
 
-- use official golang docker client `github.com/docker/docker` instead of `github.com/fsouza/go-dockerclient` 
-- use default Docker endpoint contant from official driver
-- updated dependencies (caddy to coredns)
-- updated tests to run on windows and linux without any problems
-- some code cleanup
-- change docker event listening logic
+ - use official golang docker client `github.com/docker/docker` instead of `github.com/fsouza/go-dockerclient` 
+ - use default Docker endpoint from official driver
+ - add metrics!
+ - change `log` to  coredns logger - `clog` 
+ - updated dependencies (caddy to coredns)
+ - update tests to run on Windows and Linux without any problems
+ - some code cleanup
+ - change docker event listening logic
+ - configurable TTL for `A` answer
+
+**ToDo**
+
+ - Support docker tls config in params block
 
 ## Name
 
-dockerdiscovery - add/remove DNS records for docker containers.
+docker - add/remove DNS records for docker containers based on docker container and network events.
 
 ## Syntax
 
@@ -39,24 +46,25 @@ docker [DOCKER_ENDPOINT] {
     hostname_domain HOSTNAME_DOMAIN_NAME
     network_aliases DOCKER_NETWORK
     label LABEL
+    ttl TTL
 }
 ```
 
-* `DOCKER_ENDPOINT`: the path to the docker socket. If unspecified, defaults to `unix:///var/run/docker.sock`. It can also be TCP socket, such as `tcp://127.0.0.1:999`.
-* `DOMAIN_NAME`: the name of the domain for [container name](https://docs.docker.com/engine/reference/run/#name---name), e.g. when `DOMAIN_NAME` is `docker.loc`, your container with `my-nginx` (as subdomain) [name](https://docs.docker.com/engine/reference/run/#name---name) will be assigned the domain name: `my-nginx.docker.loc`
-* `HOSTNAME_DOMAIN_NAME`: the name of the domain for [hostname](https://docs.docker.com/config/containers/container-networking/#ip-address-and-hostname). Work same as `DOMAIN_NAME` for hostname.
-* `DOCKER_NETWORK`: the name of the docker network. Resolve directly by [network aliases](https://docs.docker.com/v17.09/engine/userguide/networking/configure-dns) (like internal docker dns resolve host by aliases whole network)
-* `LABEL`: container label of resolving host (by default enable and equals ```coredns.dockerdiscovery.host```)
+ - `DOCKER_ENDPOINT`: the path to the docker socket. If unspecified, defaults to `unix:///var/run/docker.sock`. It can also be TCP socket, such as `tcp://127.0.0.1:999`.
+ - `DOMAIN_NAME`: the name of the domain for [container name](https://docs.docker.com/engine/reference/run/#name---name), e.g. when `DOMAIN_NAME` is `docker.loc`, your container with `my-nginx` (as subdomain) [name](https://docs.docker.com/engine/reference/run/#name---name) will be assigned the domain name: `my-nginx.docker.loc`
+ - `HOSTNAME_DOMAIN_NAME`: the name of the domain for [hostname](https://docs.docker.com/config/containers/container-networking/#ip-address-and-hostname). Work same as `DOMAIN_NAME` for hostname.
+ - `DOCKER_NETWORK`: the name of the docker network. Resolve directly by [network aliases](https://docs.docker.com/v17.09/engine/userguide/networking/configure-dns) (like internal docker dns resolve host by aliases whole network)
+ - `LABEL`: container label of resolving host (by default enable and equals `coredns.dockerdiscovery.host`)
+ - `TTL`: ttl for domain (by default `3600`)
 
 ## How To Build
 
 ```
 GO111MODULE=on go get -u github.com/coredns/coredns
-GO111MODULE=on go get github.com/rb-coredns/coredns-dockerdiscovery
+GO111MODULE=on go get github.com/rb-coredns/coredns-docker-discovery
 cd ~/go/src/github.com/coredns/coredns
-echo "docker:github.com/rb-coredns/coredns-dockerdiscovery" >> plugin.cfg
-cat plugin.cfg | uniq > plugin.cfg.tmp
-mv plugin.cfg.tmp plugin.cfg
+echo "docker:github.com/rb-coredns/coredns-docker-discovery" >> plugin.cfg
+cat plugin.cfg | uniq > plugin.cfg
 make all
 ~/go/src/github.com/coredns/coredns/coredns --version
 ```
@@ -94,6 +102,7 @@ go test -v
         hostname_domain docker-host.loc
     }
     log
+    debug
 }
 ```
 
@@ -101,12 +110,10 @@ Start CoreDNS:
 
 ```
 $ ./coredns
-
+[DEBUG] plugin/docker: start
 .:15353
-2018/04/26 22:36:32 [docker] start
-2018/04/26 22:36:32 [INFO] CoreDNS-1.1.1
-2018/04/26 22:36:32 [INFO] linux/amd64, go1.10.1,
-CoreDNS-1.1.1
+CoreDNS-1.8.3
+windows/amd64, go1.16.3, 
 ```
 
 Start a docker container:

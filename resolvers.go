@@ -1,4 +1,4 @@
-package dockerdiscovery
+package docker
 
 import (
 	"fmt"

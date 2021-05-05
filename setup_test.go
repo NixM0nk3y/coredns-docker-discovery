@@ -1,4 +1,4 @@
-package dockerdiscovery
+package docker
 
 import (
 	"fmt"
@@ -72,7 +72,7 @@ func TestSetupDockerDiscovery(t *testing.T) {
 	}
 	var address = net.ParseIP("192.11.0.1")
 
-	var container = &types.ContainerJSON{
+	var containerData = &types.ContainerJSON{
 		ContainerJSONBase: &types.ContainerJSONBase{
 			ID:   "fa155d6fd141e29256c286070d2d44b3f45f1e46822578f1e7d66c1e7981e6c7",
 			Name: "evil_ptolemy",
@@ -89,31 +89,31 @@ func TestSetupDockerDiscovery(t *testing.T) {
 		},
 	}
 
-	err = dd.updateContainerInfo(container)
+	err = dd.updateContainerInfo(containerData)
 	assert.Nil(t, err)
 
-	containerInfo, err := dd.containerInfoByDomain("myproject.loc.")
+	containerInfoData, err := dd.containerInfoByDomain("myproject.loc.")
 	assert.Nil(t, err)
-	assert.NotNil(t, containerInfo)
-	assert.NotNil(t, containerInfo.address)
-	assert.Equal(t, containerInfo.address, address)
+	assert.NotNil(t, containerInfoData)
+	assert.NotNil(t, containerInfoData.address)
+	assert.Equal(t, containerInfoData.address, address)
 
-	containerInfo, _ = dd.containerInfoByDomain("wrong.loc.")
-	assert.Nil(t, containerInfo)
+	containerInfoData, _ = dd.containerInfoByDomain("wrong.loc.")
+	assert.Nil(t, containerInfoData)
 
-	containerInfo, err = dd.containerInfoByDomain("nginx.home.example.org.")
+	containerInfoData, err = dd.containerInfoByDomain("nginx.home.example.org.")
 	assert.Nil(t, err)
-	assert.NotNil(t, containerInfo)
+	assert.NotNil(t, containerInfoData)
 
-	containerInfo, _ = dd.containerInfoByDomain("wrong.home.example.org.")
-	assert.Nil(t, containerInfo)
+	containerInfoData, _ = dd.containerInfoByDomain("wrong.home.example.org.")
+	assert.Nil(t, containerInfoData)
 
-	containerInfo, err = dd.containerInfoByDomain("label-host.loc.")
+	containerInfoData, err = dd.containerInfoByDomain("label-host.loc.")
 	assert.Nil(t, err)
-	assert.NotNil(t, containerInfo)
+	assert.NotNil(t, containerInfoData)
 
-	containerInfo, err = dd.containerInfoByDomain(fmt.Sprintf("%s.docker.loc.", container.Name))
+	containerInfoData, err = dd.containerInfoByDomain(fmt.Sprintf("%s.docker.loc.", containerData.Name))
 	assert.Nil(t, err)
-	assert.NotNil(t, containerInfo)
-	assert.Equal(t, container.Name, containerInfo.container.Name)
+	assert.NotNil(t, containerInfoData)
+	assert.Equal(t, containerData.Name, containerInfoData.container.Name)
 }
