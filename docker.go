@@ -23,6 +23,7 @@ import (
 type containerInfo struct {
 	container *types.ContainerJSON
 	address   net.IP
+	addressv6 net.IP
 	domains   []string // resolved domain
 }
 
@@ -93,11 +94,22 @@ func (dd Discovery) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.M
 	switch state.QType() {
 	case dns.TypeA:
 		containerInfoData, _ := dd.containerInfoByDomain(state.QName())
-		if containerInfoData != nil {
+		if containerInfoData != nil && containerInfoData.address != nil {
 			metricsDockerSuccessCountVec.WithLabelValues(metrics.WithServer(ctx), zone, state.QName()).Inc()
 			metricsDockerSuccessCount.Inc()
 			log.Debugf("[zone/%s] A Found ip %v for zone %s and host %s", dd.Zone, containerInfoData.address, zone, state.QName())
 			answers = dd.a(state, []net.IP{containerInfoData.address})
+		} else {
+			metricsDockerFailureCountVec.WithLabelValues(metrics.WithServer(ctx), zone, state.QName()).Inc()
+			metricsDockerFailureCount.Inc()
+		}
+	case dns.TypeAAAA:
+		containerInfoData, _ := dd.containerInfoByDomain(state.QName())
+		if containerInfoData != nil && containerInfoData.addressv6 != nil {
+			metricsDockerSuccessCountVec.WithLabelValues(metrics.WithServer(ctx), zone, state.QName()).Inc()
+			metricsDockerSuccessCount.Inc()
+			log.Debugf("[zone/%s] AAAA Found ip %v for zone %s and host %s", dd.Zone, containerInfoData.addressv6, zone, state.QName())
+			answers = dd.aaaa(state, []net.IP{containerInfoData.addressv6})
 		} else {
 			metricsDockerFailureCountVec.WithLabelValues(metrics.WithServer(ctx), zone, state.QName()).Inc()
 			metricsDockerFailureCount.Inc()
@@ -127,10 +139,11 @@ func (dd Discovery) Name() string {
 	return pluginName
 }
 
-func (dd Discovery) getContainerAddress(container *types.ContainerJSON) (net.IP, error) {
+func (dd Discovery) getContainerAddress(container *types.ContainerJSON) (net.IP, net.IP, error) {
 	for {
+		log.Debugf("Network settings: %#v", container.NetworkSettings)
 		if container.NetworkSettings.IPAddress != "" {
-			return net.ParseIP(container.NetworkSettings.IPAddress), nil
+			return net.ParseIP(container.NetworkSettings.IPAddress), net.ParseIP(container.NetworkSettings.GlobalIPv6Address), nil
 		}
 
 		networkMode := container.HostConfig.NetworkMode
@@ -147,28 +160,28 @@ func (dd Discovery) getContainerAddress(container *types.ContainerJSON) (net.IP,
 			var err error
 			*container, err = dd.dockerClient.ContainerInspect(context.TODO(), string(otherID))
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			continue
 		} else {
 			network, ok := container.NetworkSettings.Networks[string(networkMode)]
 			if !ok { // sometime while "network:disconnect" event fire
-				return nil, fmt.Errorf("unable to find network settings for the network %s", networkMode)
+				return nil, nil, fmt.Errorf("unable to find network settings for the network %s", networkMode)
 			}
 
-			return net.ParseIP(network.IPAddress), nil // ParseIP return nil when IPAddress equals ""
+			return net.ParseIP(network.IPAddress), net.ParseIP(container.NetworkSettings.GlobalIPv6Address), nil // ParseIP return nil when IPAddress equals ""
 		}
 	}
 }
 
 func (dd Discovery) updateContainerInfo(container *types.ContainerJSON) error {
 	_, isExist := dd.containerInfoMap[container.ID]
-	containerAddress, err := dd.getContainerAddress(container)
+	containerAddress, containerv6Address, err := dd.getContainerAddress(container)
 	if isExist { // remove previous resolved container info
 		delete(dd.containerInfoMap, container.ID)
 	}
 
-	if err != nil || containerAddress == nil {
+	if err != nil || (containerAddress == nil && containerv6Address == nil) {
 		log.Debugf("[zone/%s] Remove container entry %s (%s)", dd.Zone, normalizeContainerName(container), container.ID[:12])
 		return err
 	}
@@ -178,11 +191,12 @@ func (dd Discovery) updateContainerInfo(container *types.ContainerJSON) error {
 		dd.containerInfoMap[container.ID] = &containerInfo{
 			container: container,
 			address:   containerAddress,
+			addressv6: containerv6Address,
 			domains:   domains,
 		}
 
 		if !isExist {
-			log.Debugf("[zone/%s] A dd entry of container %s (%s). IP: %v, Domains: [%s]", dd.Zone, normalizeContainerName(container), container.ID[:12], containerAddress, strings.Join(domains, ", "))
+			log.Debugf("[zone/%s] A dd entry of container %s (%s). IP: %v, IP6: %v, Domains: [%s]", dd.Zone, normalizeContainerName(container), container.ID[:12], containerAddress, containerv6Address, strings.Join(domains, ", "))
 		}
 	} else if isExist {
 		log.Debugf("[zone/%s] Remove container entry %s (%s)", dd.Zone, normalizeContainerName(container), container.ID[:12])
@@ -265,6 +279,23 @@ func (dd Discovery) a(state request.Request, ips []net.IP) []dns.RR {
 				Rrtype: dns.TypeA,
 			},
 			A: ip.To4(),
+		})
+	}
+	return answers
+}
+
+// aaaa takes a slice of net.IPs and returns a slice of A RRs.
+func (dd Discovery) aaaa(state request.Request, ips []net.IP) []dns.RR {
+	var answers []dns.RR
+	for _, ip := range ips {
+		answers = append(answers, &dns.AAAA{
+			Hdr: dns.RR_Header{
+				Name:   state.QName(),
+				Ttl:    dd.TTL,
+				Class:  dns.ClassINET,
+				Rrtype: dns.TypeAAAA,
+			},
+			AAAA: ip.To16(),
 		})
 	}
 	return answers
